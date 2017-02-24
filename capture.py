@@ -3,8 +3,10 @@ import time
 import caffe
 import numpy as np
 from scipy import misc
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, InlineQueryHandler
+from telegram import InlineQueryResultCachedPhoto
 import logging
+from uuid import uuid4
 import os
 from time import sleep
 import datetime
@@ -18,7 +20,7 @@ def start(bot, update):
 def alarm():
     print "Alarm!"
     d = datetime.datetime.now()
-    if ((d.hour+d.minute/60.0>1.7)and(d.hour<18)):
+    if ((d.hour+d.minute/60.0>7.7)and(d.hour<18)):
         global THISBOT
         for chat_id in ChatArray:
             try: 
@@ -28,16 +30,21 @@ def alarm():
                 print "User delete himself"
                 ChatArray.remove(chat_id )
                 RewriteChat()
+        global ListOf
         photo_file = open(last_adress, 'rb')
-        THISBOT.sendPhoto("@win_feed", photo_file)
+        id = THISBOT.sendPhoto("@win_feed", photo_file)
+#Let's save image names. Easy way to read history.
+        ListOfImg.append(id.photo[0].file_id)
+        if (len(ListOfImg)>=6):
+            del ListOfImg [0]
             
 #Help comand
 def help(bot, update):
     update.message.reply_text('We have few command here:')
-    update.message.reply_text('/LastGood - send you last good photo')
-    update.message.reply_text('/StartSpam - you want all the photo!')
-    update.message.reply_text('/StopSpam - STOP IT!')
-    update.message.reply_text('/HowMuch - How much birds came today')
+    update.message.reply_text('/lastgood - send you last good photo')
+    update.message.reply_text('/startspam - you want all the photo!')
+    update.message.reply_text('/stopspam - STOP IT!')
+    update.message.reply_text('/howmuch - How much birds came today')
     update.message.reply_text('/start - Just hi!')
     update.message.reply_text('/help - Yep, we here')
 
@@ -61,6 +68,17 @@ def RewriteChat():
         fw.write(str(chat_id) + '\n')
     fw.close()
 
+#Some strange ideas
+#Inline image input
+#History search
+def inlinequery(bot, update):
+    query = update.inline_query.query
+    results = list()
+    for i in range(len(ListOfImg)):
+        results.append(InlineQueryResultCachedPhoto(id=uuid4(),title=str(i),
+                                            photo_file_id=ListOfImg[i]))
+    update.inline_query.answer(results)
+
 #Add new user
 def StartSpam(bot, update):
     chat_id = update.message.chat_id
@@ -82,7 +100,6 @@ def StopSpam(bot, update):
     except ValueError:
         update.message.reply_text("U lie 2 me!")
 
-
 #erroor workout
 def error(bot, update, error):
     logger.warn('Update "%s" caused error "%s"' % (update, error))
@@ -100,20 +117,23 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
-updater = Updater("SECRET_TEXT")
+updater = Updater("SECRET")
 global THISBOT
 THISBOT = updater.bot
 global ChatArray  
 ChatArray  = []
+global ListOfImg
+ListOfImg = []
 dp = updater.dispatcher
 global CountIt
 CountIt = 0
 dp.add_handler(CommandHandler("start", start))
 dp.add_handler(CommandHandler("help", help))
-dp.add_handler(CommandHandler("LastGood", LastGood))
-dp.add_handler(CommandHandler("StartSpam", StartSpam))
-dp.add_handler(CommandHandler("HowMuch", HowMuch))
-dp.add_handler(CommandHandler("StopSpam", StopSpam))
+dp.add_handler(CommandHandler("lastgood", LastGood))
+dp.add_handler(CommandHandler("startspam", StartSpam))
+dp.add_handler(CommandHandler("howmuch", HowMuch))
+dp.add_handler(CommandHandler("stopspam", StopSpam))
+dp.add_handler(InlineQueryHandler(inlinequery))
 dp.add_error_handler(error)
 updater.start_polling()
 global last_adress

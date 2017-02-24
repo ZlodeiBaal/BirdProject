@@ -18,9 +18,9 @@ capture.py - основная программа для RPi. Осуществляет набор базы и распознавание
 3) Если всё же надумаете, то сначала изучайте весь раздел тут - http://cv-blog.ru/?cat=37 </br>
 
 ###Общий путь
--Вам понадобиться: Raspberry Pi, какой-то способ достучаться до него, WiFi, 3G, LAN. Камера. Либо USB, либо родная от RPi. Рассчётное время сборки-настройки от 2х часов до половины дня.
--Установить на него:  OpenCV, Caffe for RPi. В зависимости от модели RPi и возникающих слонжойстей может уйти часов от 4-5 до целого дня.
--Придумать как сделать вывод результатов. Можно сохранением на диск, можно через Telegram (эти два способа естьв  коде). Пол дня + думать над логикой.
+- Вам понадобиться: Raspberry Pi, какой-то способ достучаться до него, WiFi, 3G, LAN. Камера. Либо USB, либо родная от RPi. Рассчётное время сборки-настройки от 2х часов до половины дня.
+- Установить на него:  OpenCV, Caffe for RPi. В зависимости от модели RPi и возникающих слонжойстей может уйти часов от 4-5 до целого дня.
+- Придумать как сделать вывод результатов. Можно сохранением на диск, можно через Telegram (эти два способа естьв  коде). Пол дня + думать над логикой.
 
 #What is it?
 This is project for recognize bird that come to my window feeder. Raspberry Pi B+ as main device. It analyze images from camera. At first it decide witch one with moving. Next it use Caffe Framework and SqueezeNet to recognize bird presence. Theoretically it can recognize bird type. Sadly my image base is too small yet – function work bad.

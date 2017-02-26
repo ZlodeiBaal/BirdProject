@@ -5,9 +5,12 @@ import cv2
 
 #Miminalisticc test
 caffe_root = '/media/anton/WorkAndStuff/CAFFE/caffenew0217/'
-net = caffe.Net('deploy.prototxt', 'SQ.caffemodel', caffe.TEST)
+net = caffe.Net('deploy.prototxt', 'SQ_NEW_iter_500.caffemodel', caffe.TEST)
 net.blobs['data'].reshape(1, 3,  227, 227)
-image = misc.imread('/media/anton/Bazes/BIRD/FinalBase/1227.jpg')
+#image = misc.imread('/media/anton/WorkAndStuff/OpenProject/BirdProject/SqNet/1___2.jpg')
+image = misc.imread('/home/anton/LocalDrive/RaspberryPi/base_d/0.jpg')
+image = misc.imresize(image, [227, 227])
+#image = misc.imread('/media/anton/Bazes/BIRD/FinalBase/969.jpg')
 transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
 
 mu = np.array([128.0, 128.0, 128.0])

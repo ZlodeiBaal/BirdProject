@@ -2,6 +2,7 @@
 import numpy as np
 import caffe
 from scipy import misc
+from scipy import ndimage
 from copy import copy
 import random
 import copy
@@ -16,8 +17,8 @@ caffe.set_mode_gpu()
 caffe.set_device(0)
 workdir = '/media/anton/WorkAndStuff/OpenProject/BirdProject/SqNet'
 solver = caffe.SGDSolver(osp.join(workdir, 'solver_supp.prototxt'))
-solver.net.copy_from(osp.join(workdir, 'squeezenet_v1.1.caffemodel'))
-
+solver.net.copy_from(osp.join(workdir, 'squeezenet_v1.1.caffemodel')) #original network
+#solver.net.copy_from(osp.join(workdir, 'SQ.caffemodel'))
 #Load file afd foulders
 def GetListWild(folder):
     List_Of_Adress = []
@@ -46,7 +47,7 @@ def PrepareDataList(BASE, length):
     for M in range(0,min(length,len(BASE))):
         img, text = BASE[M]
         image = misc.imread(img,mode='RGB')
-        image = misc.imresize(image, [227, 227])
+        #image = misc.imresize(image, [227, 227])
         r1 = []
         if isfile(text):
             f = open(text, 'r')
@@ -84,8 +85,56 @@ def SeparateList(L):
     f2.close()
     return Train,Test
 
+
+def adjust_gamma(image, gamma=1.0):
+    # build a lookup table mapping the pixel values [0, 255] to
+    # their adjusted gamma values
+    invGamma = 1.0 / gamma
+    table = np.array([((i / 255.0) ** invGamma) * 255
+                      for i in np.arange(0, 256)]).astype("uint8")
+
+    # apply gamma correction using the lookup table
+    return cv2.LUT(image, table)
+
+
+#Random noize effect
+def AddNoize(i):
+    R = random.randint(0, 1)
+    if (R==1):
+        i=np.fliplr(i)#random mirroring
+    R = random.randint(0, 1)
+    if (R==1):
+        R = random.randint(-10, 10)
+        i= ndimage.interpolation.rotate(i,R)#random rotation
+    R = random.randint(0, 1)
+    if (R==1):
+        crop_left=random.randint(0,15)
+        crop_right = random.randint(1, 15)
+        crop_top = random.randint(0, 15)
+        crop_bot = random.randint(1, 15)
+        i=i[crop_left:-crop_right,crop_top:-crop_bot,:] #Randomcrop
+    #Next code is VERY SLOW becoase it use Python to change brightness
+    #need to optimase it, but i have no time yet:)
+    R = random.randint(0, 2)
+    if (R==2): #Random brightness in R channel
+        d = random.random()+1
+        i[:, :, 0] = adjust_gamma(i[:,:,0],d)
+    R = random.randint(0, 2)
+    if (R==2): #Random brightness in G channel
+        d = random.random()+1
+        i[:, :, 1] = adjust_gamma(i[:, :, 1], d)
+    R = random.randint(0, 2)
+    if (R==2): #Random brightness in B channel
+        d = random.random()+1
+        i[:, :, 2] = adjust_gamma(i[:, :, 2], d)
+    #misc.imsave("test.jpg",i)
+    return i
+
+
 #Prepare data for learning
-def PrepareDataFromList(i):
+def PrepareDataFromList(i, Noize=False):
+    if (Noize):
+        i=AddNoize(i) #random noizing
     mu = np.array([128.0, 128.0, 128.0])
     transformer.set_transpose('data', (2, 0, 1))
     transformer.set_mean('data', mu)
@@ -93,7 +142,7 @@ def PrepareDataFromList(i):
     return transformed_image
 
 #load in memory
-ListData = PrepareDataList(BIRDBASE,2297)
+ListData = PrepareDataList(BIRDBASE,2656)
 ListData_train, ListData_test =SeparateList(ListData)
 
 Age_Size = 1000
@@ -106,6 +155,7 @@ for j in range(0,40):
     solver.test_nets[0].share_with(solver.net)
     FullCorrect=0
     Semicorrect=0
+    Incorrect=0
 
 ####Test our recognition####
     for p in range(0, len(ListData_test)):
@@ -115,6 +165,8 @@ for j in range(0,40):
         solver.test_nets[0].forward()
         if (solver.test_nets[0].blobs['pool10'].data[0].argmax() == r[0]):
             FullCorrect+=1
+        else:
+            Incorrect+=1
     fs = open('ResultOfTest', 'a')
     fs.write(str(FullCorrect)  + ' '+str(currit) + ' '+ str(len(ListData_test))+'\n')
     fs.close()
@@ -124,7 +176,7 @@ for j in range(0,40):
         for in_batch in range(0, batch_size):
             R = random.randint(0, len(ListData_train) - 1)
             i, r = ListData_train[R]
-            transformed_image = PrepareDataFromList(i)
+            transformed_image = PrepareDataFromList(i,Noize=True)
             solver.net.blobs['data'].data[in_batch] = transformed_image
             solver.net.blobs['label'].data[in_batch] = r[0] #bird type
 #Bird quality - differentt approach

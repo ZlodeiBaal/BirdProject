@@ -3,9 +3,9 @@ import os
 import shutil
 
 
-CurrentBase = "//192.168.0.9/Public/RaspberryPi/base_10/"
-StartSaveIndex=1938;
-SaveBase="//192.168.0.9/Public/RaspberryPi/FinalBase/"
+CurrentBase = "F:/BIRD/good/fg1"
+StartSaveIndex=2201;
+SaveBase="F:/BIRD/FinalBase/"
 LastImg = ""
 LastTxt = ""
 
